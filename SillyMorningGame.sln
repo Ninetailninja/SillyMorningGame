@@ -1,0 +1,24 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SillyMorningGame", "SillyMorningGame\SillyMorningGame\SillyMorningGame.csproj", "{052662C2-8A9B-426E-A386-DD9D060D24EF}"
+EndProject
+Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "SillyMorningGameContent", "SillyMorningGame\SillyMorningGameContent\SillyMorningGameContent.contentproj", "{DA5641FE-48D1-47B0-BAFB-156211ECB78F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{052662C2-8A9B-426E-A386-DD9D060D24EF}.Debug|x86.ActiveCfg = Debug|x86
+		{052662C2-8A9B-426E-A386-DD9D060D24EF}.Debug|x86.Build.0 = Debug|x86
+		{052662C2-8A9B-426E-A386-DD9D060D24EF}.Release|x86.ActiveCfg = Release|x86
+		{052662C2-8A9B-426E-A386-DD9D060D24EF}.Release|x86.Build.0 = Release|x86
+		{DA5641FE-48D1-47B0-BAFB-156211ECB78F}.Debug|x86.ActiveCfg = Debug|x86
+		{DA5641FE-48D1-47B0-BAFB-156211ECB78F}.Release|x86.ActiveCfg = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
