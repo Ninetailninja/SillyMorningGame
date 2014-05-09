@@ -23,15 +23,6 @@ namespace SillyMorningGame.Model
         // The state of the Enemy Ship
         public bool Active;
 
-        // The hit points of the enemy, if this goes to zero the enemy dies
-        public int Health;
-
-        // The amount of damage the enemy inflicts on the player ship
-        public int Damage;
-
-        // The amount of score the enemy will give to the player
-        public int Value;
-
         // Get the width of the enemy ship
         public int Width
         {

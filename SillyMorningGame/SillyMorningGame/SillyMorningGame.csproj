@@ -107,6 +107,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Model\Boss1.cs" />
     <Compile Include="Model\Enemy.cs" />
     <Compile Include="Model\Player.cs" />
     <Compile Include="Model\Powerup.cs" />

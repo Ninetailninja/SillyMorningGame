@@ -21,6 +21,8 @@ namespace SillyMorningGame.Controller
         // Enemies
         Texture2D enemyTexture;
         List<Enemy> enemies;
+        List<Boss1> bosses;
+        Texture2D bossTexture;
 
         // The rate at which the enemies appear
         TimeSpan enemySpawnTime;
@@ -52,6 +54,8 @@ namespace SillyMorningGame.Controller
 
         Texture2D projectileTexture;
         List<Projectile> projectiles;
+        int projectileBoost;
+        Color projectileColor;
 
         // The rate of fire of the player laser
         TimeSpan fireTime;
@@ -98,7 +102,8 @@ namespace SillyMorningGame.Controller
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-
+            projectileBoost = 0;
+            projectileColor = Color.White;
             // Initialize the player class
             player = new Player();
             // Set a constant player move speed
@@ -108,18 +113,19 @@ namespace SillyMorningGame.Controller
 
             // Initialize the enemies list
             enemies = new List<Enemy>();
+            bosses = new List<Boss1>();
             powerups = new List<Powerup>();
             explosions = new List<Animation>();
 
             //Set player's score to zero
-            score = 0;
+            score = 9900;
 
             // Set the time keepers to zero
             previousSpawnTime = TimeSpan.Zero;
             previousPowerupSpawnTime = TimeSpan.Zero;
             // Used to determine how fast enemy respawns
             enemySpawnTime = TimeSpan.FromSeconds(1.0f);
-            powerupSpawnTime = TimeSpan.FromSeconds(5.0f);
+            powerupSpawnTime = TimeSpan.FromSeconds(20.0f);
             // Initialize our random number generator
             random = new Random();
 
@@ -153,6 +159,26 @@ namespace SillyMorningGame.Controller
             powerups.Add(powerup);
         }
 
+        private void AddBoss()
+        {
+            // Create the animation object
+            Animation bossAnimation = new Animation();
+
+            // Initialize the animation with the correct animation information
+            bossAnimation.Initialize(bossTexture, Vector2.Zero, 308, 400, 8, 20, Color.White, 1f, true);
+
+            // Randomly generate the position of the enemy
+            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + enemyTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+
+            // Create an enemy
+            Boss1 boss = new Boss1();
+
+            // Initialize the enemy
+            boss.Initialize(bossAnimation, position);
+
+            bosses.Add(boss);
+        }
+
         private void AddEnemy()
         {
             // Create the animation object
@@ -184,6 +210,7 @@ namespace SillyMorningGame.Controller
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             enemyTexture = Content.Load<Texture2D>("Sprites/mineAnimation");
+            bossTexture = Content.Load<Texture2D>("Sprites/BigMine");
 
             // Load the player resources
             Animation playerAnimation = new Animation();
@@ -241,7 +268,8 @@ namespace SillyMorningGame.Controller
             // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.T))
                 this.Exit();
-
+            //if (Keyboard.GetState().IsKeyDown(Keys.P))
+                
             // TODO: Add your update logic here
             // Save the previous state of the keyboard and game pad so we can determinesingle key/button presses
             previousGamePadState = currentGamePadState;
@@ -267,6 +295,7 @@ namespace SillyMorningGame.Controller
             UpdateExplosions(gameTime);
             // Update the Powerups
             updatePowerups(gameTime);
+            UpdateBoss(gameTime);
 
             base.Update(gameTime);
         }
@@ -296,7 +325,7 @@ namespace SillyMorningGame.Controller
         private void AddProjectile(Vector2 position)
         {
             Projectile projectile = new Projectile();
-            projectile.Initialize(GraphicsDevice.Viewport, projectileTexture, position);
+            projectile.Initialize(GraphicsDevice.Viewport, projectileTexture, position, projectileBoost);
             projectiles.Add(projectile);
         }
 
@@ -309,6 +338,38 @@ namespace SillyMorningGame.Controller
                 {
                     explosions.RemoveAt(i);
                 }
+            }
+        }
+
+        private void UpdateBoss(GameTime gameTime)
+        {
+            
+            if (score % 10000 == 0 && score != 0)
+            {
+                AddBoss();
+                enemySpawnTime = TimeSpan.FromSeconds(.5);
+            }
+
+           
+            for (int i = bosses.Count - 1; i >= 0; i--)
+            {
+                bosses[i].Update(gameTime);
+
+                if (bosses[i].Active == false)
+                {
+                    
+                    if (bosses[i].Health <= 0)
+                    {
+                        // Add an explosion
+                        AddExplosion(bosses[i].Position);
+                        // Play the explosion sound
+                        explosionSound.Play();
+                        //Add to the player's score
+                        score += bosses[i].Value;
+                    }
+                    bosses.RemoveAt(i);
+                }
+
             }
         }
 
@@ -365,13 +426,6 @@ namespace SillyMorningGame.Controller
 
                 if (powerups[i].Active == false)
                 {
-                    // If not active and health <= 0
-                    if (powerups[i].Health <= 0)
-                    {
-                        
-                        //Add to the player's score
-                        score += powerups[i].Value;
-                    }
                     powerups.RemoveAt(i);
                 }
 
@@ -384,6 +438,7 @@ namespace SillyMorningGame.Controller
             // determine if two objects are overlapping
             Rectangle rectangle1;
             Rectangle rectangle2;
+            Rectangle rectangle3;
 
             // Only create the rectangle once for the player
             rectangle1 = new Rectangle((int)player.Position.X,
@@ -416,6 +471,27 @@ namespace SillyMorningGame.Controller
                         player.Active = false;
                 }
 
+            }
+
+            //player vs powerup collision
+             for (int i = 0; i < powerups.Count; i++)
+            {
+                rectangle3 = new Rectangle((int)powerups[i].Position.X, (int)powerups[i].Position.Y, powerups[i].Width, powerups[i].Height);
+
+                if (rectangle1.Intersects(rectangle3))
+                 {
+                     powerups[i].Active = false;
+
+                     projectileBoost += 2;
+                     if (projectileBoost == 2)
+                     {
+                         projectileColor = Color.Green;
+                     }
+                     if (projectileBoost == 4)
+                     {
+                         projectileColor = Color.Red;
+                     }
+                 }
             }
 
             // Projectile vs Enemy Collision
@@ -496,6 +572,8 @@ namespace SillyMorningGame.Controller
                 {
                     player.Health = 100;
                     score = 0;
+                    projectileBoost = 0;
+                    projectileColor = Color.White;
                 }
             }
         }
@@ -543,6 +621,10 @@ namespace SillyMorningGame.Controller
             {
                 enemies[i].Draw(spriteBatch);
             }
+            for (int i = 0; i < bosses.Count; i++)
+            {
+                bosses[i].Draw(spriteBatch);
+            }
             // Draw the Powerups
             for (int i = 0; i < powerups.Count; i++)
             {
@@ -551,7 +633,7 @@ namespace SillyMorningGame.Controller
             // Draw the Projectiles
             for (int i = 0; i < projectiles.Count; i++)
             {
-                projectiles[i].Draw(spriteBatch);
+                projectiles[i].Draw(spriteBatch, projectileColor);
             }
             // Draw the explosions
             for (int i = 0; i < explosions.Count; i++)

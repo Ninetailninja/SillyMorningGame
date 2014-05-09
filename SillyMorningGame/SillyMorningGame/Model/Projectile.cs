@@ -39,15 +39,15 @@ namespace SillyMorningGame.Model
         float projectileMoveSpeed;
 
 
-        public void Initialize(Viewport viewport, Texture2D texture, Vector2 position)
+        public void Initialize(Viewport viewport, Texture2D texture, Vector2 position, int damageBonus)
         {
             Texture = texture;
             Position = position;
             this.viewport = viewport;
-
+            
             Active = true;
 
-            Damage = 2;
+            Damage = 2 + damageBonus;
 
             projectileMoveSpeed = 20f;
         }
@@ -62,9 +62,9 @@ namespace SillyMorningGame.Model
                 Active = false;
         }
 
-        public void Draw(SpriteBatch spriteBatch)
+        public void Draw(SpriteBatch spriteBatch, Color color)
         {
-            spriteBatch.Draw(Texture, Position, null, Color.White, 0f,
+            spriteBatch.Draw(Texture, Position, null, color, 0f,
             new Vector2(Width / 2, Height / 2), 1f, SpriteEffects.None, 0f);
         }
     }
