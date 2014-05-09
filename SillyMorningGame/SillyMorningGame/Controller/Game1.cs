@@ -60,6 +60,12 @@ namespace SillyMorningGame.Controller
         Texture2D explosionTexture;
         List<Animation> explosions;
 
+        Texture2D powerupTexture;
+        List<Powerup> powerups;
+        TimeSpan powerupSpawnTime;
+        TimeSpan previousPowerupSpawnTime;
+        
+
         // The sound that is played when a laser is fired
         SoundEffect laserSound;
 
@@ -102,7 +108,7 @@ namespace SillyMorningGame.Controller
 
             // Initialize the enemies list
             enemies = new List<Enemy>();
-
+            powerups = new List<Powerup>();
             explosions = new List<Animation>();
 
             //Set player's score to zero
@@ -110,10 +116,10 @@ namespace SillyMorningGame.Controller
 
             // Set the time keepers to zero
             previousSpawnTime = TimeSpan.Zero;
-
+            previousPowerupSpawnTime = TimeSpan.Zero;
             // Used to determine how fast enemy respawns
             enemySpawnTime = TimeSpan.FromSeconds(1.0f);
-
+            powerupSpawnTime = TimeSpan.FromSeconds(5.0f);
             // Initialize our random number generator
             random = new Random();
 
@@ -123,6 +129,28 @@ namespace SillyMorningGame.Controller
             fireTime = TimeSpan.FromSeconds(.15f);
 
             base.Initialize();
+        }
+
+        private void addPowerup(Vector2 position)
+        {
+            
+            
+            Powerup powerup = new Powerup();
+            powerup.Initialize(GraphicsDevice.Viewport, projectileTexture, position);
+            powerups.Add(powerup);
+
+
+
+        }
+
+        private void addPowerup()
+        {
+            Animation powerAnimation = new Animation();
+            powerAnimation.Initialize(powerupTexture, Vector2.Zero, 36, 36, 4, 30, Color.White, 1f, true);
+            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + enemyTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+            Powerup powerup = new Powerup();
+            powerup.Initialize(powerAnimation, position);
+            powerups.Add(powerup);
         }
 
         private void AddEnemy()
@@ -175,6 +203,8 @@ namespace SillyMorningGame.Controller
             projectileTexture = Content.Load<Texture2D>("Sprites/laser");
 
             explosionTexture = Content.Load<Texture2D>("Sprites/explosion");
+
+            powerupTexture = Content.Load<Texture2D>("Sprites/Powerup-Laser");
 
             // Load the score font
             font = Content.Load<SpriteFont>("gameFont");
@@ -235,6 +265,8 @@ namespace SillyMorningGame.Controller
             UpdateProjectiles();
             // Update the explosions
             UpdateExplosions(gameTime);
+            // Update the Powerups
+            updatePowerups(gameTime);
 
             base.Update(gameTime);
         }
@@ -311,6 +343,38 @@ namespace SillyMorningGame.Controller
                     enemies.RemoveAt(i);
                 }
                 
+            }
+        }
+
+        private void updatePowerups(GameTime gameTime)
+        {
+            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + powerupTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+            // Spawn a new Powerup every 10.5 seconds
+            if (gameTime.TotalGameTime - previousPowerupSpawnTime > powerupSpawnTime)
+            {
+                previousPowerupSpawnTime = gameTime.TotalGameTime;
+
+                // Add a Powerup
+                addPowerup();
+            }
+
+            // Update the Enemies
+            for (int i = powerups.Count - 1; i >= 0; i--)
+            {
+                powerups[i].Update(gameTime);
+
+                if (powerups[i].Active == false)
+                {
+                    // If not active and health <= 0
+                    if (powerups[i].Health <= 0)
+                    {
+                        
+                        //Add to the player's score
+                        score += powerups[i].Value;
+                    }
+                    powerups.RemoveAt(i);
+                }
+
             }
         }
 
@@ -478,6 +542,11 @@ namespace SillyMorningGame.Controller
             for (int i = 0; i < enemies.Count; i++)
             {
                 enemies[i].Draw(spriteBatch);
+            }
+            // Draw the Powerups
+            for (int i = 0; i < powerups.Count; i++)
+            {
+                powerups[i].Draw(spriteBatch);
             }
             // Draw the Projectiles
             for (int i = 0; i < projectiles.Count; i++)
