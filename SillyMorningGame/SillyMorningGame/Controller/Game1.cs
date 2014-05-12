@@ -19,10 +19,14 @@ namespace SillyMorningGame.Controller
     public class Game1 : Microsoft.Xna.Framework.Game
     {
         // Enemies
+        
+        Texture2D miniTexture;
         Texture2D enemyTexture;
         List<Enemy> enemies;
         List<Boss1> bosses;
         Texture2D bossTexture;
+
+        int healthMultiplier;
 
         // The rate at which the enemies appear
         TimeSpan enemySpawnTime;
@@ -43,6 +47,7 @@ namespace SillyMorningGame.Controller
 
         // Represents the player 
         Player player;
+        List<MiniShip> testShips;
 
         // Keyboard states used to determine key presses
         KeyboardState currentKeyboardState;
@@ -61,13 +66,20 @@ namespace SillyMorningGame.Controller
         TimeSpan fireTime;
         TimeSpan previousFireTime;
 
+        List<TimeSpan> miniFireTimes;
+        List<TimeSpan> miniPreviousFireTimes;
+
         Texture2D explosionTexture;
         List<Animation> explosions;
 
+        Texture2D allyPowerTexture;
         Texture2D powerupTexture;
         List<Powerup> powerups;
+        List<AllyPowerup> allyPowerups;
         TimeSpan powerupSpawnTime;
         TimeSpan previousPowerupSpawnTime;
+        TimeSpan allyPowerupSpawnTime;
+        TimeSpan allyPreviousPowerupSpawnTime;
         
 
         // The sound that is played when a laser is fired
@@ -103,9 +115,11 @@ namespace SillyMorningGame.Controller
         {
             // TODO: Add your initialization logic here
             projectileBoost = 0;
+            healthMultiplier = 1;
             projectileColor = Color.White;
             // Initialize the player class
             player = new Player();
+            testShips = new List<MiniShip>();
             // Set a constant player move speed
             playerMoveSpeed = 6f;
             bgLayer1 = new ParallaxingBackground();
@@ -115,6 +129,7 @@ namespace SillyMorningGame.Controller
             enemies = new List<Enemy>();
             bosses = new List<Boss1>();
             powerups = new List<Powerup>();
+            allyPowerups = new List<AllyPowerup>();
             explosions = new List<Animation>();
 
             //Set player's score to zero
@@ -123,6 +138,9 @@ namespace SillyMorningGame.Controller
             // Set the time keepers to zero
             previousSpawnTime = TimeSpan.Zero;
             previousPowerupSpawnTime = TimeSpan.Zero;
+
+            allyPreviousPowerupSpawnTime = TimeSpan.Zero;
+            allyPowerupSpawnTime = TimeSpan.FromSeconds(45f);
             // Used to determine how fast enemy respawns
             enemySpawnTime = TimeSpan.FromSeconds(1.0f);
             powerupSpawnTime = TimeSpan.FromSeconds(20.0f);
@@ -133,21 +151,14 @@ namespace SillyMorningGame.Controller
 
             // Set the laser to fire every quarter second
             fireTime = TimeSpan.FromSeconds(.15f);
+            miniFireTimes = new List<TimeSpan>();
+            miniPreviousFireTimes = new List<TimeSpan>();
+            
 
             base.Initialize();
         }
 
-        private void addPowerup(Vector2 position)
-        {
-            
-            
-            Powerup powerup = new Powerup();
-            powerup.Initialize(GraphicsDevice.Viewport, projectileTexture, position);
-            powerups.Add(powerup);
-
-
-
-        }
+        
 
         private void addPowerup()
         {
@@ -157,6 +168,17 @@ namespace SillyMorningGame.Controller
             Powerup powerup = new Powerup();
             powerup.Initialize(powerAnimation, position);
             powerups.Add(powerup);
+        }
+       
+
+        private void addAllyPowerup()
+        {
+            Animation allyPowerAnimation = new Animation();
+            allyPowerAnimation.Initialize(allyPowerTexture, Vector2.Zero, 74, 75, 4, 20, Color.White, 1f, true);
+            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + enemyTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+            AllyPowerup powerup = new AllyPowerup();
+            powerup.Initialize(allyPowerAnimation, position);
+            allyPowerups.Add(powerup);
         }
 
         private void AddBoss()
@@ -194,10 +216,29 @@ namespace SillyMorningGame.Controller
             Enemy enemy = new Enemy();
 
             // Initialize the enemy
-            enemy.Initialize(enemyAnimation, position);
+            enemy.Initialize(enemyAnimation, position, healthMultiplier);
 
             // Add the enemy to the active enemies list
             enemies.Add(enemy);
+        }
+
+        private void addMini()
+        {
+            Animation miniAnimation = new Animation();
+            miniTexture = Content.Load<Texture2D>("Sprites/MiniShip");
+            miniAnimation.Initialize(miniTexture, Vector2.Zero, 58, 35, 8, 30, Color.White, 1f, true);
+
+            Vector2 miniPosition = new Vector2(player.Position.X + random.Next(0, 75), GraphicsDevice.Viewport.TitleSafeArea.Y
+            + GraphicsDevice.Viewport.TitleSafeArea.Height / 2);
+            MiniShip mini = new MiniShip();
+            mini.Initialize(miniAnimation, miniPosition);
+
+            TimeSpan miniPrevious = TimeSpan.Zero;
+            TimeSpan miniFireTime = TimeSpan.FromSeconds(.15f);
+
+            testShips.Add(mini);
+            miniPreviousFireTimes.Add(miniPrevious);
+            miniFireTimes.Add(miniFireTime);
         }
 
         /// <summary>
@@ -232,6 +273,7 @@ namespace SillyMorningGame.Controller
             explosionTexture = Content.Load<Texture2D>("Sprites/explosion");
 
             powerupTexture = Content.Load<Texture2D>("Sprites/Powerup-Laser");
+            allyPowerTexture = Content.Load<Texture2D>("Sprites/Powerup-Ally");
 
             // Load the score font
             font = Content.Load<SpriteFont>("gameFont");
@@ -280,6 +322,7 @@ namespace SillyMorningGame.Controller
             currentGamePadState = GamePad.GetState(PlayerIndex.One);
 
             UpdatePlayer(gameTime);
+            
 
             // Update the parallaxing background
             bgLayer1.Update();
@@ -295,7 +338,9 @@ namespace SillyMorningGame.Controller
             UpdateExplosions(gameTime);
             // Update the Powerups
             updatePowerups(gameTime);
+            updateAllyPowerups(gameTime);
             UpdateBoss(gameTime);
+            updateMini(gameTime);
 
             base.Update(gameTime);
         }
@@ -344,10 +389,15 @@ namespace SillyMorningGame.Controller
         private void UpdateBoss(GameTime gameTime)
         {
             
+<<<<<<< HEAD
             if (score == 10000 && bosses.Count == 0)
+=======
+            if (score % 10000 == 0 && score != 0 && bosses.Count == 0)
+>>>>>>> d563b6b01dcc10f68354d370c746c7ea6d6e8357
             {
                 AddBoss();
                 enemySpawnTime = TimeSpan.FromSeconds(.5);
+                healthMultiplier += 2;
             }
 
            
@@ -427,6 +477,31 @@ namespace SillyMorningGame.Controller
                 if (powerups[i].Active == false)
                 {
                     powerups.RemoveAt(i);
+                }
+
+            }
+        }
+
+        private void updateAllyPowerups(GameTime gameTime)
+        {
+            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + powerupTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+            // Spawn a new Powerup every 10.5 seconds
+            if (gameTime.TotalGameTime - allyPreviousPowerupSpawnTime > allyPowerupSpawnTime)
+            {
+                allyPreviousPowerupSpawnTime = gameTime.TotalGameTime;
+
+                // Add a Powerup
+                addAllyPowerup();
+            }
+
+            // Update the Enemies
+            for (int i = allyPowerups.Count - 1; i >= 0; i--)
+            {
+                allyPowerups[i].Update(gameTime);
+
+                if (allyPowerups[i].Active == false)
+                {
+                    allyPowerups.RemoveAt(i);
                 }
 
             }
@@ -530,8 +605,24 @@ namespace SillyMorningGame.Controller
                      {
                          projectileColor = Color.Red;
                      }
+                     if (projectileBoost > 10)
+                     {
+                         projectileColor = Color.Purple;
+                     }
                  }
             }
+             for (int i = 0; i < allyPowerups.Count; i++)
+             {
+                 rectangle3 = new Rectangle((int)allyPowerups[i].Position.X, (int)allyPowerups[i].Position.Y, allyPowerups[i].Width, allyPowerups[i].Height);
+
+                 if (rectangle1.Intersects(rectangle3))
+                 {
+                     allyPowerups[i].Active = false;
+
+                    
+                     addMini();
+                 }
+             }
 
             // Projectile vs Enemy Collision
             for (int i = 0; i < projectiles.Count; i++)
@@ -556,7 +647,10 @@ namespace SillyMorningGame.Controller
                 }
             }
 
+<<<<<<< HEAD
             // Projectile vs Boss Collision
+=======
+>>>>>>> d563b6b01dcc10f68354d370c746c7ea6d6e8357
             for (int i = 0; i < projectiles.Count; i++)
             {
                 for (int j = 0; j < bosses.Count; j++)
@@ -566,8 +660,13 @@ namespace SillyMorningGame.Controller
                     projectiles[i].Width / 2, (int)projectiles[i].Position.Y -
                     projectiles[i].Height / 2, projectiles[i].Width, projectiles[i].Height);
 
+<<<<<<< HEAD
                     rectangle4 = new Rectangle((int)bosses[j].Position.X - enemies[j].Width / 2,
                     (int)bosses[j].Position.Y - enemies[j].Height / 2,
+=======
+                    rectangle4 = new Rectangle((int)bosses[j].Position.X - bosses[j].Width / 2,
+                    (int)bosses[j].Position.Y - bosses[j].Height / 2,
+>>>>>>> d563b6b01dcc10f68354d370c746c7ea6d6e8357
                     bosses[j].Width, bosses[j].Height);
 
                     // Determine if the two objects collided with each other
@@ -578,6 +677,35 @@ namespace SillyMorningGame.Controller
                     }
                 }
             }
+<<<<<<< HEAD
+=======
+
+            for (int i = 0; i < bosses.Count; i++)
+            {
+                rectangle4 = new Rectangle((int)bosses[i].Position.X,
+                (int)bosses[i].Position.Y,
+                bosses[i].Width,
+                bosses[i].Height);
+
+                // Determine if the two objects collided with each
+                // other
+                if (rectangle1.Intersects(rectangle4))
+                {
+                    // Subtract the health from the player based on
+                    // the enemy damage
+                    player.Health -= bosses[i].Damage;
+
+                    // Since the enemy collided with the player
+                    // destroy it
+                    bosses[i].Health = 0;
+
+                    // If the player health is less than zero we died
+                    if (player.Health <= 0)
+                        player.Active = false;
+                }
+
+            }
+>>>>>>> d563b6b01dcc10f68354d370c746c7ea6d6e8357
         }
 
         /// <summary>
@@ -641,6 +769,66 @@ namespace SillyMorningGame.Controller
             }
         }
 
+        private void updateMini(GameTime gameTime)
+        {
+            for (int i = testShips.Count - 1; i >= 0; i--)
+            {
+                testShips[i].Update(gameTime);
+                // Get Thumbstick Controls
+                testShips[i].Position.X += currentGamePadState.ThumbSticks.Left.X * playerMoveSpeed;
+                testShips[i].Position.Y -= currentGamePadState.ThumbSticks.Left.Y * playerMoveSpeed;
+
+
+                // Use the Keyboard / Dpad
+                if (currentKeyboardState.IsKeyDown(Keys.Left) ||
+                currentGamePadState.DPad.Left == ButtonState.Pressed)
+                {
+                    testShips[i].Position.X -= playerMoveSpeed;
+                }
+                if (currentKeyboardState.IsKeyDown(Keys.Right) ||
+                currentGamePadState.DPad.Right == ButtonState.Pressed)
+                {
+                    testShips[i].Position.X += playerMoveSpeed;
+                }
+                if (currentKeyboardState.IsKeyDown(Keys.Up) ||
+                currentGamePadState.DPad.Up == ButtonState.Pressed)
+                {
+                    testShips[i].Position.Y -= playerMoveSpeed;
+                }
+                if (currentKeyboardState.IsKeyDown(Keys.Down) ||
+                currentGamePadState.DPad.Down == ButtonState.Pressed)
+                {
+                    testShips[i].Position.Y += playerMoveSpeed;
+                }
+
+                // Make sure that the player does not go out of bounds
+                //player.Position.X = MathHelper.Clamp(player.Position.X, 0, GraphicsDevice.Viewport.Width - player.Width);
+                //player.Position.Y = MathHelper.Clamp(player.Position.Y, 0, GraphicsDevice.Viewport.Height - player.Height);
+
+                
+                
+                // Fire only every interval we set as the fireTime
+                if (gameTime.TotalGameTime - miniPreviousFireTimes[i] > miniFireTimes[i])
+                {
+                    // Reset our current time
+                    miniPreviousFireTimes[i] = gameTime.TotalGameTime;
+
+                    // Add the projectile, but add it to the front and center of the player
+                    AddProjectile(testShips[i].Position + new Vector2(testShips[i].Width / 2, 0));
+
+                    // Play the laser sound
+                    laserSound.Play();
+
+                    // reset score if player health goes to zero
+                    if (testShips[i].Health <= 0)
+                    {
+                        testShips[i].Active = false;
+                    }
+                }
+                 
+            }
+        }
+
         private void EndGame()
         {
 
@@ -693,6 +881,11 @@ namespace SillyMorningGame.Controller
             {
                 powerups[i].Draw(spriteBatch);
             }
+            // Draw the ally Powerups
+            for (int i = 0; i < allyPowerups.Count; i++)
+            {
+                allyPowerups[i].Draw(spriteBatch);
+            }
             // Draw the Projectiles
             for (int i = 0; i < projectiles.Count; i++)
             {
@@ -704,12 +897,19 @@ namespace SillyMorningGame.Controller
                 explosions[i].Draw(spriteBatch);
 
             }
+            for (int i = 0; i < testShips.Count; i++)
+            {
+                testShips[i].Draw(spriteBatch);
+            }
+
             // Draw the score
             spriteBatch.DrawString(font, "score: " + score, new Vector2(GraphicsDevice.Viewport.TitleSafeArea.X, GraphicsDevice.Viewport.TitleSafeArea.Y), Color.White);
             // Draw the player health
             spriteBatch.DrawString(font, "health: " + player.Health, new Vector2(GraphicsDevice.Viewport.TitleSafeArea.X, GraphicsDevice.Viewport.TitleSafeArea.Y + 30), Color.White);
             // Draw the Player
+            
             player.Draw(spriteBatch);
+
 
             // Stop drawing
             spriteBatch.End();
