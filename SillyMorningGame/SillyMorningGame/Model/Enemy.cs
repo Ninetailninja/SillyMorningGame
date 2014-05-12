@@ -40,7 +40,7 @@ namespace SillyMorningGame.Model
         // The speed at which the enemy moves
         float enemyMoveSpeed;
 
-        public void Initialize(Animation animation, Vector2 position)
+        public void Initialize(Animation animation, Vector2 position, int multiplier)
         {
             // Load the enemy ship texture
             EnemyAnimation = animation;
@@ -53,7 +53,7 @@ namespace SillyMorningGame.Model
 
 
             // Set the health of the enemy
-            Health = 10;
+            Health = 10 * multiplier;
 
             // Set the amount of damage the enemy can do
             Damage = 20;
