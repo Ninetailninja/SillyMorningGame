@@ -118,7 +118,7 @@ namespace SillyMorningGame.Controller
             explosions = new List<Animation>();
 
             //Set player's score to zero
-            score = 9900;
+            score = 0;
 
             // Set the time keepers to zero
             previousSpawnTime = TimeSpan.Zero;
@@ -344,7 +344,7 @@ namespace SillyMorningGame.Controller
         private void UpdateBoss(GameTime gameTime)
         {
             
-            if (score % 10000 == 0 && score != 0)
+            if (score == 10000 && bosses.Count == 0)
             {
                 AddBoss();
                 enemySpawnTime = TimeSpan.FromSeconds(.5);
@@ -439,6 +439,7 @@ namespace SillyMorningGame.Controller
             Rectangle rectangle1;
             Rectangle rectangle2;
             Rectangle rectangle3;
+            Rectangle rectangle4;
 
             // Only create the rectangle once for the player
             rectangle1 = new Rectangle((int)player.Position.X,
@@ -473,6 +474,32 @@ namespace SillyMorningGame.Controller
 
             }
 
+            for (int i = 0; i < bosses.Count; i++)
+            {
+                rectangle4 = new Rectangle((int)bosses[i].Position.X,
+                (int)bosses[i].Position.Y,
+                bosses[i].Width,
+                bosses[i].Height);
+
+                // Determine if the two objects collided with each
+                // other
+                if (rectangle1.Intersects(rectangle4))
+                {
+                    // Subtract the health from the player based on
+                    // the enemy damage
+                    player.Health -= bosses[i].Damage;
+
+                    // Since the enemy collided with the player
+                    // destroy it
+                    bosses[i].Health = 0;
+
+                    // If the player health is less than zero we died
+                    if (player.Health <= 0)
+                        player.Active = false;
+                }
+
+            }
+
             //player vs powerup collision
              for (int i = 0; i < powerups.Count; i++)
             {
@@ -485,9 +512,21 @@ namespace SillyMorningGame.Controller
                      projectileBoost += 2;
                      if (projectileBoost == 2)
                      {
-                         projectileColor = Color.Green;
+                         projectileColor = Color.Blue;
                      }
                      if (projectileBoost == 4)
+                     {
+                         projectileColor = Color.Green;
+                     }
+                     if (projectileBoost == 6)
+                     {
+                         projectileColor = Color.Yellow;
+                     }
+                     if (projectileBoost == 8)
+                     {
+                         projectileColor = Color.Orange;
+                     }
+                     if (projectileBoost == 10)
                      {
                          projectileColor = Color.Red;
                      }
@@ -512,6 +551,29 @@ namespace SillyMorningGame.Controller
                     if (rectangle1.Intersects(rectangle2))
                     {
                         enemies[j].Health -= projectiles[i].Damage;
+                        projectiles[i].Active = false;
+                    }
+                }
+            }
+
+            // Projectile vs Boss Collision
+            for (int i = 0; i < projectiles.Count; i++)
+            {
+                for (int j = 0; j < bosses.Count; j++)
+                {
+                    // Create the rectangles we need to determine if we collided with each other
+                    rectangle1 = new Rectangle((int)projectiles[i].Position.X -
+                    projectiles[i].Width / 2, (int)projectiles[i].Position.Y -
+                    projectiles[i].Height / 2, projectiles[i].Width, projectiles[i].Height);
+
+                    rectangle4 = new Rectangle((int)bosses[j].Position.X - enemies[j].Width / 2,
+                    (int)bosses[j].Position.Y - enemies[j].Height / 2,
+                    bosses[j].Width, bosses[j].Height);
+
+                    // Determine if the two objects collided with each other
+                    if (rectangle1.Intersects(rectangle4))
+                    {
+                        bosses[j].Health -= projectiles[i].Damage;
                         projectiles[i].Active = false;
                     }
                 }
@@ -574,6 +636,7 @@ namespace SillyMorningGame.Controller
                     score = 0;
                     projectileBoost = 0;
                     projectileColor = Color.White;
+                    enemySpawnTime = TimeSpan.FromSeconds(1.0);
                 }
             }
         }

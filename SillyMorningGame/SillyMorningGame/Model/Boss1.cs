@@ -59,7 +59,7 @@ namespace SillyMorningGame.Model
             Damage = 50;
 
             // Set how fast the enemy moves
-            enemyMoveSpeed = 2f;
+            enemyMoveSpeed = 1.5f;
 
 
             // Set the score value of the enemy
