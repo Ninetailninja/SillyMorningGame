@@ -23,6 +23,11 @@ namespace SillyMorningGame.Controller
         Texture2D shootingEnemyTexture;
         Texture2D miniTexture;
         Texture2D enemyTexture;
+        Texture2D asteroidTexture;
+        Texture2D missileTexture;
+
+        List<Missile> missiles;
+        List<Asteroid> asteroids;
         List<Enemy> enemies;
         List<Boss1> bosses;
         Texture2D bossTexture;
@@ -32,6 +37,8 @@ namespace SillyMorningGame.Controller
         // The rate at which the enemies appear
         TimeSpan enemySpawnTime;
         TimeSpan previousSpawnTime;
+        TimeSpan asteroidSpawnTime;
+        TimeSpan previousAsteroidSpawnTime;
         TimeSpan shootingEnemySpawnTime;
         TimeSpan previousShootingEnemySpawnTime;
 
@@ -69,6 +76,8 @@ namespace SillyMorningGame.Controller
         // The rate of fire of the player laser
         TimeSpan fireTime;
         TimeSpan previousFireTime;
+        TimeSpan missileFireTime;
+        TimeSpan previousMissileFireTime;
 
         List<TimeSpan> enemyFireTimes;
         List<TimeSpan> previousEnemyFireTimes;
@@ -139,6 +148,7 @@ namespace SillyMorningGame.Controller
 
             // Initialize the enemies list
             enemies = new List<Enemy>();
+            asteroids = new List<Asteroid>();
             bosses = new List<Boss1>();
             powerups = new List<Powerup>();
             allyPowerups = new List<AllyPowerup>();
@@ -154,6 +164,7 @@ namespace SillyMorningGame.Controller
             previousSpawnTime = TimeSpan.Zero;
             previousPowerupSpawnTime = TimeSpan.Zero;
             previousHealthPowerupSpawnTime = TimeSpan.Zero;
+            previousAsteroidSpawnTime = TimeSpan.Zero;
             healthPowerupSpawnTime = TimeSpan.FromSeconds(80f);
             allyPreviousPowerupSpawnTime = TimeSpan.Zero;
             allyPowerupSpawnTime = TimeSpan.FromSeconds(45f);
@@ -161,14 +172,18 @@ namespace SillyMorningGame.Controller
             enemySpawnTime = TimeSpan.FromSeconds(1.0f);
             powerupSpawnTime = TimeSpan.FromSeconds(20.0f);
             shootingEnemySpawnTime = TimeSpan.FromSeconds(3f);
+            asteroidSpawnTime = TimeSpan.FromSeconds(6f);
             previousShootingEnemySpawnTime = TimeSpan.Zero;
             // Initialize our random number generator
             random = new Random();
 
             projectiles = new List<Projectile>();
+            missiles = new List<Missile>();
 
             // Set the laser to fire every quarter second
             fireTime = TimeSpan.FromSeconds(.15f);
+            missileFireTime = TimeSpan.FromSeconds(3f);
+            previousMissileFireTime = TimeSpan.Zero;
             miniFireTimes = new List<TimeSpan>();
             miniPreviousFireTimes = new List<TimeSpan>();
 
@@ -251,6 +266,27 @@ namespace SillyMorningGame.Controller
             enemies.Add(enemy);
         }
 
+        private void AddAsteroid()
+        {
+            // Create the animation object
+            Animation asteroidAnimation = new Animation();
+
+            // Initialize the animation with the correct animation information
+            asteroidAnimation.Initialize(asteroidTexture, Vector2.Zero, 80, 60, 1, 30, Color.White, 1f, true);
+
+            // Randomly generate the position of the enemy
+            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + asteroidTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+
+            // Create an enemy
+            Asteroid asteroid = new Asteroid();
+
+            // Initialize the enemy
+            asteroid.Initialize(asteroidAnimation, position);
+
+            // Add the enemy to the active enemies list
+            asteroids.Add(asteroid);
+        }
+
         private void AddShootingEnemy()
         {
             // Create the animation object
@@ -305,6 +341,7 @@ namespace SillyMorningGame.Controller
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            asteroidTexture = Content.Load<Texture2D>("Sprites/Asteroid");
             shootingEnemyTexture = Content.Load<Texture2D>("Sprites/shootingEnemyAnimation");
             enemyTexture = Content.Load<Texture2D>("Sprites/mineAnimation");
             bossTexture = Content.Load<Texture2D>("Sprites/BigMine");
@@ -325,6 +362,7 @@ namespace SillyMorningGame.Controller
             mainBackground = Content.Load<Texture2D>("Images/mainbackground");
 
             projectileTexture = Content.Load<Texture2D>("Sprites/laser");
+            missileTexture = Content.Load<Texture2D>("Sprites/Missiles");
 
             explosionTexture = Content.Load<Texture2D>("Sprites/explosion");
 
@@ -392,6 +430,7 @@ namespace SillyMorningGame.Controller
             UpdateCollision();
             // Update the projectiles
             UpdateProjectiles();
+            UpdateMissiles(gameTime);
             UpdateEnemyProjectiles();
             // Update the explosions
             UpdateExplosions(gameTime);
@@ -401,6 +440,7 @@ namespace SillyMorningGame.Controller
             updateAllyPowerups(gameTime);
             UpdateBoss(gameTime);
             updateMini(gameTime);
+            UpdateAsteroids(gameTime);
 
             base.Update(gameTime);
         }
@@ -433,6 +473,14 @@ namespace SillyMorningGame.Controller
             projectile.Initialize(GraphicsDevice.Viewport, projectileTexture, position, projectileBoost);
             projectiles.Add(projectile);
         }
+        private void AddMissile(Vector2 position)
+        {
+            Animation missileAnimation = new Animation();
+            missileAnimation.Initialize(missileTexture, position, 120, 22, 4, 20, Color.White, 1f, true);
+            Missile missile = new Missile();
+            missile.Initialize(missileAnimation, position, GraphicsDevice.Viewport);
+            missiles.Add(missile);
+        }
 
         private void AddEnemyProjectile(Vector2 position)
         {
@@ -455,7 +503,7 @@ namespace SillyMorningGame.Controller
 
         private void UpdateBoss(GameTime gameTime)
         {
-            if (score % 10000 == 0 && score != 0 && bosses.Count == 0)
+            if (score % 8000 == 0 && score != 0 && bosses.Count == 0)
             {
                 AddBoss();
                 enemySpawnTime = TimeSpan.FromSeconds(.5);
@@ -514,6 +562,33 @@ namespace SillyMorningGame.Controller
                         score += enemies[i].Value;
                     }
                     enemies.RemoveAt(i);
+                }
+
+            }
+        }
+
+        private void UpdateAsteroids(GameTime gameTime)
+        {
+            // Spawn a new enemy enemy every 1.5 seconds
+            if (gameTime.TotalGameTime - previousAsteroidSpawnTime > asteroidSpawnTime && bosses.Count == 0)
+            {
+                previousAsteroidSpawnTime = gameTime.TotalGameTime;
+
+                // Add an Enemy
+                AddAsteroid();
+            }
+
+            // Update the Enemies
+            for (int i = asteroids.Count - 1; i >= 0; i--)
+            {
+                asteroids[i].Update(gameTime);
+
+                if (asteroids[i].Active == false)
+                {
+                    AddExplosion(asteroids[i].Position);
+                    // Play the explosion sound
+                    explosionSound.Play();
+                    asteroids.RemoveAt(i);
                 }
 
             }
@@ -683,6 +758,33 @@ namespace SillyMorningGame.Controller
                 }
 
             }
+
+            for (int i = 0; i < asteroids.Count; i++)
+            {
+                rectangle2 = new Rectangle((int)asteroids[i].Position.X,
+                (int)asteroids[i].Position.Y,
+                asteroids[i].Width,
+                asteroids[i].Height);
+
+                // Determine if the two objects collided with each
+                // other
+                if (rectangle1.Intersects(rectangle2))
+                {
+                    // Subtract the health from the player based on
+                    // the enemy damage
+                    player.Health -= asteroids[i].Damage;
+
+                    // Since the enemy collided with the player
+                    // destroy it
+                    asteroids[i].Active = false;
+
+                    // If the player health is less than zero we died
+                    if (player.Health <= 0)
+                        player.Active = false;
+                }
+
+            }
+
             for (int i = 0; i < shootingEnemies.Count; i++)
             {
                 rectangle2 = new Rectangle((int)shootingEnemies[i].Position.X,
@@ -818,6 +920,81 @@ namespace SillyMorningGame.Controller
                     }
                 }
             }
+            for (int i = 0; i < missiles.Count; i++)
+            {
+                for (int j = 0; j < enemies.Count; j++)
+                {
+                    // Create the rectangles we need to determine if we collided with each other
+                    rectangle1 = new Rectangle((int)missiles[i].Position.X -
+                    missiles[i].Width / 2, (int)missiles[i].Position.Y -
+                    missiles[i].Height / 2, missiles[i].Width, missiles[i].Height);
+
+                    rectangle2 = new Rectangle((int)enemies[j].Position.X - enemies[j].Width / 2,
+                    (int)enemies[j].Position.Y - enemies[j].Height / 2,
+                    enemies[j].Width, enemies[j].Height);
+
+                    
+                    // Determine if the two objects collided with each other
+                    if (rectangle1.Intersects(rectangle2))
+                    {
+                        enemies[j].Health -= missiles[i].Damage;
+                        missiles[i].Active = false;
+                    }
+                }
+                for (int j = 0; j < shootingEnemies.Count; j++)
+                {
+                    // Create the rectangles we need to determine if we collided with each other
+                    rectangle1 = new Rectangle((int)missiles[i].Position.X -
+                    missiles[i].Width / 2, (int)missiles[i].Position.Y -
+                    missiles[i].Height / 2, missiles[i].Width, missiles[i].Height);
+
+                    rectangle2 = new Rectangle((int)shootingEnemies[j].Position.X - shootingEnemies[j].Width / 2,
+                    (int)shootingEnemies[j].Position.Y - shootingEnemies[j].Height / 2,
+                    shootingEnemies[j].Width, shootingEnemies[j].Height);
+
+
+                    // Determine if the two objects collided with each other
+                    if (rectangle1.Intersects(rectangle2))
+                    {
+                        shootingEnemies[j].Health -= missiles[i].Damage;
+                        missiles[i].Active = false;
+                    }
+                }
+                for (int j = 0; j < bosses.Count; j++)
+                {
+                    // Create the rectangles we need to determine if we collided with each other
+                    rectangle1 = new Rectangle((int)missiles[i].Position.X -
+                    missiles[i].Width / 2, (int)missiles[i].Position.Y -
+                    missiles[i].Height / 2, missiles[i].Width, missiles[i].Height);
+
+                    rectangle2 = new Rectangle((int)bosses[j].Position.X - bosses[j].Width / 2,
+                    (int)bosses[j].Position.Y - bosses[j].Height / 2,
+                    bosses[j].Width, bosses[j].Height);
+
+
+                    // Determine if the two objects collided with each other
+                    if (rectangle1.Intersects(rectangle2))
+                    {
+                        bosses[j].Health -= missiles[i].Damage;
+                        missiles[i].Active = false;
+                    }
+                }
+                for (int j = 0; j < asteroids.Count; j++)
+                {
+                    rectangle3 = new Rectangle((int)asteroids[i].Position.X, (int)asteroids[i].Position.Y - 40, asteroids[i].Width, asteroids[i].Height + 20);
+
+                    if (rectangle1.Intersects(rectangle3))
+                    {
+                        asteroids[j].Active = false;
+                        AddExplosion(asteroids[j].Position);
+                        explosionSound.Play();
+                        missiles[i].Active = false;
+
+                        PowerupDrop();
+                    }
+                }
+
+            }
             for (int i = 0; i < projectiles.Count; i++)
             {
                 for (int j = 0; j < shootingEnemies.Count; j++)
@@ -909,6 +1086,22 @@ namespace SillyMorningGame.Controller
             }
         }
 
+        private void PowerupDrop()
+        {
+            int dropped = 0;
+            int rValue = random.Next(1, 6);
+
+            if (rValue == 2)
+            {
+                dropped = random.Next(1, 4);
+            }
+
+            if (dropped == 1)
+            {
+                AddPowerup();
+            }
+        }
+
         /// <summary>
         /// Updates the player based on the input from the user via gamepad or keyboard
         /// </summary>
@@ -940,6 +1133,16 @@ namespace SillyMorningGame.Controller
             currentGamePadState.DPad.Down == ButtonState.Pressed)
             {
                 player.Position.Y += playerMoveSpeed;
+            }
+            if (currentKeyboardState.IsKeyDown(Keys.Space) ||
+            currentGamePadState.Buttons.X == ButtonState.Pressed)
+            {
+                if (gameTime.TotalGameTime - previousMissileFireTime > missileFireTime)
+                {
+                    previousMissileFireTime = gameTime.TotalGameTime;
+                    AddMissile(player.Position + new Vector2(player.Width / 2, 0));
+                    explosionSound.Play();
+                }
             }
 
             // Make sure that the player does not go out of bounds
@@ -1074,6 +1277,21 @@ namespace SillyMorningGame.Controller
             
         }
 
+        private void UpdateMissiles(GameTime gameTime)
+        {
+            // Update the Projectiles
+            for (int i = missiles.Count - 1; i >= 0; i--)
+            {
+                missiles[i].Update(gameTime);
+
+                if (missiles[i].Active == false)
+                {
+                    missiles.RemoveAt(i);
+                }
+            }
+
+        }
+
         private void UpdateEnemyProjectiles()
         {
             for (int i = enemyProjectiles.Count - 1; i >= 0; i--)
@@ -1111,6 +1329,10 @@ namespace SillyMorningGame.Controller
             {
                 enemies[i].Draw(spriteBatch);
             }
+            for (int i = 0; i < asteroids.Count; i++)
+            {
+                asteroids[i].Draw(spriteBatch);
+            }
             for (int i = 0; i < shootingEnemies.Count; i++)
             {
                 shootingEnemies[i].Draw(spriteBatch);
@@ -1137,6 +1359,10 @@ namespace SillyMorningGame.Controller
             for (int i = 0; i < projectiles.Count; i++)
             {
                 projectiles[i].Draw(spriteBatch, projectileColor);
+            }
+            for (int i = 0; i < missiles.Count; i++)
+            {
+                missiles[i].Draw(spriteBatch);
             }
             for (int i = 0; i < enemyProjectiles.Count; i++)
             {

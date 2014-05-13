@@ -70,7 +70,7 @@
     <GenerateManifests>true</GenerateManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
@@ -121,9 +121,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Model\AllyPowerup.cs" />
+    <Compile Include="Model\Asteroid.cs" />
     <Compile Include="Model\Boss1.cs" />
     <Compile Include="Model\Enemy.cs" />
     <Compile Include="Model\HealthPowerup.cs" />
+    <Compile Include="Model\Missile.cs" />
     <Compile Include="Model\Player.cs" />
     <Compile Include="Model\Powerup.cs" />
     <Compile Include="Model\Projectile.cs" />
