@@ -51,6 +51,19 @@ namespace SillyMorningGame.Model
 
             projectileMoveSpeed = 20f;
         }
+        public void Initialize(Viewport viewport, Texture2D texture, Vector2 position)
+        {
+            Texture = texture;
+            Position = position;
+            this.viewport = viewport;
+
+            Active = true;
+
+            Damage = 10;
+
+            projectileMoveSpeed = 15f;
+        }
+
 
         public void Update()
         {
@@ -62,9 +75,24 @@ namespace SillyMorningGame.Model
                 Active = false;
         }
 
+        public void UpdateEnemies()
+        {
+            // Projectiles always move to the left
+            Position.X -= projectileMoveSpeed;
+
+            // Deactivate the bullet if it goes out of screen
+            if (Position.X + Texture.Width / 2 > viewport.Width)
+                Active = false;
+        }
+
         public void Draw(SpriteBatch spriteBatch, Color color)
         {
             spriteBatch.Draw(Texture, Position, null, color, 0f,
+            new Vector2(Width / 2, Height / 2), 1f, SpriteEffects.None, 0f);
+        }
+        public void Draw(SpriteBatch spriteBatch)
+        {
+            spriteBatch.Draw(Texture, Position, null, Color.White, 0f,
             new Vector2(Width / 2, Height / 2), 1f, SpriteEffects.None, 0f);
         }
     }

@@ -123,10 +123,12 @@
     <Compile Include="Model\AllyPowerup.cs" />
     <Compile Include="Model\Boss1.cs" />
     <Compile Include="Model\Enemy.cs" />
+    <Compile Include="Model\HealthPowerup.cs" />
     <Compile Include="Model\Player.cs" />
     <Compile Include="Model\Powerup.cs" />
     <Compile Include="Model\Projectile.cs" />
     <Compile Include="Model\MiniShip.cs" />
+    <Compile Include="Model\ShootingEnemy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Controller\Program.cs" />
     <Compile Include="Controller\Game1.cs" />
