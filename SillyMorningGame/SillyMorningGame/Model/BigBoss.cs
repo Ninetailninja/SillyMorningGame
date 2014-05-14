@@ -3,22 +3,24 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SillyMorningGame.View;
 
-
 namespace SillyMorningGame.Model
 {
-    class ShootingEnemy
+    class BigBoss
     {
         // Animation representing the enemy
-        public Animation EnemyAnimation;
+        public Animation bossAnimation;
 
         // The position of the enemy ship relative to the top left corner of thescreen
         public Vector2 Position;
+        public Vector2 WeaponPosition;
 
         // The state of the Enemy Ship
         public bool Active;
+        public bool WeaponActive;
 
         // The hit points of the enemy, if this goes to zero the enemy dies
         public int Health;
+        public int WeaponHealth;
 
         // The amount of damage the enemy inflicts on the player ship
         public int Damage;
@@ -29,42 +31,54 @@ namespace SillyMorningGame.Model
         // Get the width of the enemy ship
         public int Width
         {
-            get { return EnemyAnimation.FrameWidth; }
+            get { return bossAnimation.FrameWidth; }
+        }
+        public int WeaponWidth
+        {
+            get { return bossAnimation.FrameWidth - 178; }
         }
 
         // Get the height of the enemy ship
         public int Height
         {
-            get { return EnemyAnimation.FrameHeight; }
+            get { return bossAnimation.FrameHeight; }
+        }
+        public int WeaponHeight
+        {
+            get { return bossAnimation.FrameHeight - 140; }
         }
 
         // The speed at which the enemy moves
         float enemyMoveSpeed;
 
-        public void Initialize(Animation animation, Vector2 position, int multiplier)
+        public void Initialize(Animation animation, Vector2 position)
         {
             // Load the enemy ship texture
-            EnemyAnimation = animation;
+            bossAnimation = animation;
 
             // Set the position of the enemy
             Position = position;
+            WeaponPosition.X = position.X + 160;
+            WeaponPosition.Y = position.Y + 200;
 
             // We initialize the enemy to be active so it will be update in the game
             Active = true;
+            WeaponActive = true;
 
 
             // Set the health of the enemy
-            Health = 75 * multiplier;
+            Health = 20000;
+            WeaponHealth = 10000;
 
             // Set the amount of damage the enemy can do
-            Damage = 50 * multiplier;
+            Damage = 100;
 
             // Set how fast the enemy moves
-            enemyMoveSpeed = 3f;
+            enemyMoveSpeed = 1.5f;
 
 
             // Set the score value of the enemy
-            Value = 300;
+            Value = 10000;
 
         }
 
@@ -72,12 +86,13 @@ namespace SillyMorningGame.Model
         {
             // The enemy always moves to the left so decrement it's xposition
             Position.X -= enemyMoveSpeed;
+            WeaponPosition.X -= enemyMoveSpeed;
 
             // Update the position of the Animation
-            EnemyAnimation.Position = Position;
+            bossAnimation.Position = Position;
 
             // Update Animation
-            EnemyAnimation.Update(gameTime);
+            bossAnimation.Update(gameTime);
 
             // If the enemy is past the screen or its health reaches 0 then deactivateit
             if (Position.X < -Width || Health <= 0)
@@ -86,12 +101,14 @@ namespace SillyMorningGame.Model
                 // active game list
                 Active = false;
             }
+            if (WeaponHealth <= 0)
+                WeaponActive = false;
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
             // Draw the animation
-            EnemyAnimation.Draw(spriteBatch);
+            bossAnimation.Draw(spriteBatch);
         }
     }
 }

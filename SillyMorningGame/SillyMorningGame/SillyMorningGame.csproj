@@ -122,6 +122,7 @@
   <ItemGroup>
     <Compile Include="Model\AllyPowerup.cs" />
     <Compile Include="Model\Asteroid.cs" />
+    <Compile Include="Model\BigBoss.cs" />
     <Compile Include="Model\Boss1.cs" />
     <Compile Include="Model\Enemy.cs" />
     <Compile Include="Model\HealthPowerup.cs" />

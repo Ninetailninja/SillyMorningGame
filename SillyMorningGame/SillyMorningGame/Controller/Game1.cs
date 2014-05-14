@@ -19,6 +19,7 @@ namespace SillyMorningGame.Controller
     public class Game1 : Microsoft.Xna.Framework.Game
     {
         // Enemies
+        Texture2D bigBossTexture;
         Texture2D healthPowerupTexture;
         Texture2D shootingEnemyTexture;
         Texture2D miniTexture;
@@ -31,6 +32,7 @@ namespace SillyMorningGame.Controller
         List<Enemy> enemies;
         List<Boss1> bosses;
         Texture2D bossTexture;
+        List<BigBoss> bigBosses;
 
         int healthMultiplier;
 
@@ -41,6 +43,9 @@ namespace SillyMorningGame.Controller
         TimeSpan previousAsteroidSpawnTime;
         TimeSpan shootingEnemySpawnTime;
         TimeSpan previousShootingEnemySpawnTime;
+
+        List<TimeSpan> bigBossWeaponFireTimes;
+        List<TimeSpan> bigBossPreviousWeaponFireTimes;
 
         // A random number generator
         Random random;
@@ -57,7 +62,7 @@ namespace SillyMorningGame.Controller
 
         // Represents the player 
         Player player;
-        List<MiniShip> testShips;
+        List<MiniShip> miniShips;
 
         // Keyboard states used to determine key presses
         KeyboardState currentKeyboardState;
@@ -70,6 +75,7 @@ namespace SillyMorningGame.Controller
         Texture2D projectileTexture;
         List<Projectile> projectiles;
         List<Projectile> enemyProjectiles;
+        List<Projectile> bigBossProjectiles;
         int projectileBoost;
         Color projectileColor;
 
@@ -122,6 +128,8 @@ namespace SillyMorningGame.Controller
 
         // A movement speed for the player
         float playerMoveSpeed;
+        int max;
+        int secondHealthMultiplier;
 
         public Game1()
         {
@@ -140,10 +148,11 @@ namespace SillyMorningGame.Controller
             // TODO: Add your initialization logic here
             projectileBoost = 0;
             healthMultiplier = 1;
+            secondHealthMultiplier = 1;
             projectileColor = Color.White;
             // Initialize the player class
             player = new Player();
-            testShips = new List<MiniShip>();
+            miniShips = new List<MiniShip>();
             // Set a constant player move speed
             playerMoveSpeed = 6f;
             bgLayer1 = new ParallaxingBackground();
@@ -159,6 +168,11 @@ namespace SillyMorningGame.Controller
             explosions = new List<Animation>();
             shootingEnemies = new List<ShootingEnemy>();
             enemyProjectiles = new List<Projectile>();
+
+            bigBosses = new List<BigBoss>();
+            bigBossPreviousWeaponFireTimes = new List<TimeSpan>();
+            bigBossWeaponFireTimes = new List<TimeSpan>();
+            bigBossProjectiles = new List<Projectile>();
 
             //Set player's score to zero
             score = 0;
@@ -194,6 +208,8 @@ namespace SillyMorningGame.Controller
 
             enemyFireTimes = new List<TimeSpan>();
             previousEnemyFireTimes = new List<TimeSpan>();
+
+            max = 4;
 
             base.Initialize();
         }
@@ -236,16 +252,16 @@ namespace SillyMorningGame.Controller
             Animation bossAnimation = new Animation();
 
             // Initialize the animation with the correct animation information
-            bossAnimation.Initialize(bossTexture, Vector2.Zero, 308, 400, 8, 20, Color.White, 1f, true);
+            bossAnimation.Initialize(bossTexture, Vector2.Zero, 308, 400, 8, 30, Color.White, 1f, true);
 
             // Randomly generate the position of the enemy
-            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + enemyTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + bossTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
 
             // Create an enemy
             Boss1 boss = new Boss1();
-
+            
             // Initialize the enemy
-            boss.Initialize(bossAnimation, position);
+            boss.Initialize(bossAnimation, position, healthMultiplier);
 
             bosses.Add(boss);
         }
@@ -307,7 +323,7 @@ namespace SillyMorningGame.Controller
             ShootingEnemy shootingEnemy = new ShootingEnemy();
 
             // Initialize the enemy
-            shootingEnemy.Initialize(enemyAnimation, position, healthMultiplier);
+            shootingEnemy.Initialize(enemyAnimation, position, secondHealthMultiplier);
 
             // Add the enemy to the active enemies list
             shootingEnemies.Add(shootingEnemy);
@@ -334,11 +350,41 @@ namespace SillyMorningGame.Controller
             TimeSpan miniMissilePrevious = TimeSpan.Zero;
             TimeSpan miniMissileFireTime = TimeSpan.FromSeconds(3f);
 
-            testShips.Add(mini);
+            miniShips.Add(mini);
             miniPreviousFireTimes.Add(miniPrevious);
             miniFireTimes.Add(miniFireTime);
             miniMissileFireTimes.Add(miniMissileFireTime);
             previousMiniMissileFireTimes.Add(miniMissilePrevious);
+        }
+
+        private void AddBigBoss()
+        {
+            // Create the animation object
+            Animation bigBossAnimation = new Animation();
+
+            // Initialize the animation with the correct animation information
+            bigBossAnimation.Initialize(bigBossTexture, Vector2.Zero, 550, 300, 1, 20, Color.White, 1f, true);
+
+            // Randomly generate the position of the enemy
+            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + bigBossTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+
+            // Create an enemy
+            BigBoss boss = new BigBoss();
+
+            // Initialize the enemy
+            boss.Initialize(bigBossAnimation, position);
+            TimeSpan fireTime = TimeSpan.FromSeconds(1f);
+            TimeSpan previous = TimeSpan.Zero;
+
+            bigBossPreviousWeaponFireTimes.Add(previous);
+            bigBossWeaponFireTimes.Add(fireTime);
+            bigBosses.Add(boss);
+        }
+        private void AddBigBossProjectiles(Vector2 position)
+        {
+            Projectile projectile = new Projectile();
+            projectile.Initialize(GraphicsDevice.Viewport, projectileTexture, position);
+            bigBossProjectiles.Add(projectile);
         }
 
         /// <summary>
@@ -350,6 +396,7 @@ namespace SillyMorningGame.Controller
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            bigBossTexture = Content.Load<Texture2D>("Sprites/BigBoss");
             asteroidTexture = Content.Load<Texture2D>("Sprites/Asteroid");
             shootingEnemyTexture = Content.Load<Texture2D>("Sprites/shootingEnemyAnimation");
             enemyTexture = Content.Load<Texture2D>("Sprites/mineAnimation");
@@ -435,8 +482,10 @@ namespace SillyMorningGame.Controller
             // Update the enemies
             UpdateEnemies(gameTime);
             UpdateShootingEnemies(gameTime);
+            UpdateBigBoss(gameTime);
             // Update the collision
             UpdateCollision();
+            UpdateBossCollision();
             // Update the projectiles
             UpdateProjectiles();
             UpdateMissiles(gameTime);
@@ -512,11 +561,15 @@ namespace SillyMorningGame.Controller
 
         private void UpdateBoss(GameTime gameTime)
         {
-            if (score % 8000 == 0 && score != 0 && bosses.Count == 0)
+            if (score % 8000 == 0 && score != 0 && bosses.Count == 0 && bigBosses.Count == 0)
             {
-                AddBoss();
+                AddBigBoss();
                 enemySpawnTime = TimeSpan.FromSeconds(.5);
-                healthMultiplier += 3;
+                healthMultiplier += 4;
+            }
+            if (score % 16000 == 0 && score != 0)
+            {
+                secondHealthMultiplier += 3;
             }
 
 
@@ -539,6 +592,49 @@ namespace SillyMorningGame.Controller
                     bosses.RemoveAt(i);
                 }
 
+            }
+        }
+
+        private void UpdateBigBoss(GameTime gameTime)
+        {
+            if (score == 20000 && bigBosses.Count == 0)
+            {
+                AddBigBoss();
+            }
+            for (int i = bigBosses.Count - 1; i >= 0; i--)
+            {
+                bigBosses[i].Update(gameTime);
+
+                if (bigBosses[i].Active == false)
+                {
+
+                    if (bigBosses[i].Health <= 0)
+                    {
+                        // Add an explosion
+                        AddExplosion(bigBosses[i].Position);
+                        // Play the explosion sound
+                        explosionSound.Play();
+                        //Add to the player's score
+                        score += bigBosses[i].Value;
+                    }
+                    bigBosses.RemoveAt(i);
+                }
+
+                if (gameTime.TotalGameTime - bigBossPreviousWeaponFireTimes[i] > bigBossWeaponFireTimes[i])
+                {
+                    // Reset our current time
+                    bigBossPreviousWeaponFireTimes[i] = gameTime.TotalGameTime;
+
+                    // Add the projectile, but add it to the front and center of the player
+                    AddBigBossProjectiles(bigBosses[i].WeaponPosition - new Vector2(bigBosses[i].WeaponWidth / 2, 0));
+                    AddBigBossProjectiles(bigBosses[i].WeaponPosition - new Vector2(bigBosses[i].WeaponWidth / 2, 20));
+                    AddBigBossProjectiles(bigBosses[i].WeaponPosition - new Vector2(bigBosses[i].WeaponWidth / 2, 40));
+
+                    // Play the laser sound
+                    laserSound.Play();
+
+
+                }
             }
         }
 
@@ -721,6 +817,101 @@ namespace SillyMorningGame.Controller
                 if (allyPowerups[i].Active == false)
                 {
                     allyPowerups.RemoveAt(i);
+                }
+
+            }
+        }
+
+        private void UpdateBossCollision()
+        {
+            Rectangle rectangle1;
+            Rectangle rectangle2;
+            Rectangle rectangle3;
+
+            rectangle1 = new Rectangle((int)player.Position.X,
+                (int)player.Position.Y,
+                player.Width, player.Height);
+
+            // Projectile vs Enemy Collision
+            for (int i = 0; i < projectiles.Count; i++)
+            {
+                for (int j = 0; j < bigBosses.Count; j++)
+                {
+                    // Create the rectangles we need to determine if we collided with each other
+                    rectangle1 = new Rectangle((int)projectiles[i].Position.X -
+                    projectiles[i].Width / 2, (int)projectiles[i].Position.Y -
+                    projectiles[i].Height / 2, projectiles[i].Width, projectiles[i].Height);
+
+                    rectangle2 = new Rectangle((int)bigBosses[j].WeaponPosition.X - bigBosses[j].WeaponWidth / 2,
+                    (int)bigBosses[j].WeaponPosition.Y - bigBosses[j].WeaponHeight / 2,
+                    bigBosses[j].WeaponWidth, bigBosses[j].WeaponHeight);
+
+
+                    if (bigBosses[j].WeaponActive == false)
+                    {
+                        rectangle2 = new Rectangle((int)bigBosses[j].Position.X - bigBosses[j].Width / 2,
+                        (int)bigBosses[j].Position.Y - bigBosses[j].Height / 2,
+                        bigBosses[j].Width, bigBosses[j].Height);
+                    }
+                    // Determine if the two objects collided with each other
+                    if (rectangle1.Intersects(rectangle2) && bigBosses[j].WeaponActive == true)
+                    {
+                        bigBosses[j].WeaponHealth -= projectiles[i].Damage;
+                        projectiles[i].Active = false;
+                    }
+                    else if (rectangle1.Intersects(rectangle2) && bigBosses[j].WeaponActive == false)
+                    {
+                        bigBosses[j].Health -= projectiles[i].Damage;
+                        projectiles[i].Active = false;
+                    }
+                    
+                }
+            }
+
+            for (int i = 0; i < missiles.Count; i++)
+            {
+                rectangle3 = new Rectangle((int)missiles[i].Position.X -
+                    missiles[i].Width / 2, (int)missiles[i].Position.Y -
+                    missiles[i].Height / 2, missiles[i].Width, missiles[i].Height);
+                for (int j = 0; j < bigBosses.Count; j++)
+                {
+                    rectangle2 = new Rectangle((int)bigBosses[j].WeaponPosition.X - bigBosses[j].WeaponWidth / 2,
+                        (int)bigBosses[j].WeaponPosition.Y - bigBosses[j].WeaponHeight / 2,
+                        bigBosses[j].WeaponWidth, bigBosses[j].WeaponHeight);
+
+                    if (bigBosses[j].WeaponActive == false)
+                    {
+                        rectangle2 = new Rectangle((int)bigBosses[j].Position.X - bigBosses[j].Width / 2,
+                        (int)bigBosses[j].Position.Y - bigBosses[j].Height / 2,
+                        bigBosses[j].Width, bigBosses[j].Height);
+                    }
+                    if (rectangle3.Intersects(rectangle2) && bigBosses[j].WeaponActive == true)
+                    {
+                        bigBosses[j].WeaponHealth -= missiles[i].Damage;
+                        missiles[i].Active = false;
+                    }
+                    else if (rectangle3.Intersects(rectangle2) && bigBosses[j].WeaponActive == false)
+                    {
+                        bigBosses[j].Health -= missiles[i].Damage;
+                        missiles[i].Active = false;
+                    }
+                }
+            }
+            for (int i = 0; i < bigBossProjectiles.Count; i++)
+            {
+
+                // Create the rectangles we need to determine if we collided with each other
+                rectangle2 = new Rectangle((int)bigBossProjectiles[i].Position.X -
+                bigBossProjectiles[i].Width / 2, (int)bigBossProjectiles[i].Position.Y -
+                bigBossProjectiles[i].Height / 2, bigBossProjectiles[i].Width, bigBossProjectiles[i].Height);
+
+
+
+                // Determine if the two objects collided with each other
+                if (rectangle1.Intersects(rectangle2))
+                {
+                    player.Health -= bigBossProjectiles[i].Damage;
+                    bigBossProjectiles[i].Active = false;
                 }
 
             }
@@ -1098,12 +1289,24 @@ namespace SillyMorningGame.Controller
         private void PowerupDrop(Vector2 position)
         {
             int dropped = 0;
-            int max = 4;
             int rValue = random.Next(1, max);
 
             if (rValue == 1)
             {
                 dropped = random.Next(1, 4);
+                max = 4;
+                if (dropped == 1)
+                {
+                    AddPowerup(position);
+                }
+                if (dropped == 2)
+                {
+                    addAllyPowerup(position);
+                }
+                if (dropped == 3)
+                {
+                    AddHealthPowerup(position);
+                }
             }
             else if (max > 2)
             {
@@ -1111,18 +1314,7 @@ namespace SillyMorningGame.Controller
 
             }
 
-            if (dropped == 1)
-            {
-                AddPowerup(position);
-            }
-            if (dropped == 2)
-            {
-                addAllyPowerup(position);
-            }
-            if (dropped == 3)
-            {
-                AddHealthPowerup(position);
-            }
+            
         }
 
         /// <summary>
@@ -1192,9 +1384,9 @@ namespace SillyMorningGame.Controller
                     projectileColor = Color.White;
                     enemySpawnTime = TimeSpan.FromSeconds(1.0);
 
-                    for (int i = testShips.Count - 1; i >= 0; i--)
+                    for (int i = miniShips.Count - 1; i >= 0; i--)
                     {
-                        testShips.RemoveAt(i);
+                        miniShips.RemoveAt(i);
                     }
                     for (int i = enemies.Count - 1; i >= 0; i--)
                     {
@@ -1221,34 +1413,34 @@ namespace SillyMorningGame.Controller
 
         private void updateMini(GameTime gameTime)
         {
-            for (int i = testShips.Count - 1; i >= 0; i--)
+            for (int i = miniShips.Count - 1; i >= 0; i--)
             {
-                testShips[i].Update(gameTime);
+                miniShips[i].Update(gameTime);
                 // Get Thumbstick Controls
-                testShips[i].Position.X += currentGamePadState.ThumbSticks.Left.X * playerMoveSpeed;
-                testShips[i].Position.Y -= currentGamePadState.ThumbSticks.Left.Y * playerMoveSpeed;
+                miniShips[i].Position.X += currentGamePadState.ThumbSticks.Left.X * playerMoveSpeed;
+                miniShips[i].Position.Y -= currentGamePadState.ThumbSticks.Left.Y * playerMoveSpeed;
 
 
                 // Use the Keyboard / Dpad
                 if (currentKeyboardState.IsKeyDown(Keys.Left) ||
                 currentGamePadState.DPad.Left == ButtonState.Pressed)
                 {
-                    testShips[i].Position.X -= playerMoveSpeed;
+                    miniShips[i].Position.X -= playerMoveSpeed;
                 }
                 if (currentKeyboardState.IsKeyDown(Keys.Right) ||
                 currentGamePadState.DPad.Right == ButtonState.Pressed)
                 {
-                    testShips[i].Position.X += playerMoveSpeed;
+                    miniShips[i].Position.X += playerMoveSpeed;
                 }
                 if (currentKeyboardState.IsKeyDown(Keys.Up) ||
                 currentGamePadState.DPad.Up == ButtonState.Pressed)
                 {
-                    testShips[i].Position.Y -= playerMoveSpeed;
+                    miniShips[i].Position.Y -= playerMoveSpeed;
                 }
                 if (currentKeyboardState.IsKeyDown(Keys.Down) ||
                 currentGamePadState.DPad.Down == ButtonState.Pressed)
                 {
-                    testShips[i].Position.Y += playerMoveSpeed;
+                    miniShips[i].Position.Y += playerMoveSpeed;
                 }
                 if (currentKeyboardState.IsKeyDown(Keys.Space) ||
             currentGamePadState.Buttons.X == ButtonState.Pressed)
@@ -1256,7 +1448,7 @@ namespace SillyMorningGame.Controller
                     if (gameTime.TotalGameTime - previousMiniMissileFireTimes[i] > miniMissileFireTimes[i])
                     {
                         previousMiniMissileFireTimes[i] = gameTime.TotalGameTime;
-                        AddMissile(testShips[i].Position + new Vector2(testShips[i].Width / 2, 0));
+                        AddMissile(miniShips[i].Position + new Vector2(miniShips[i].Width / 2, 0));
                     }
                 }
 
@@ -1273,15 +1465,15 @@ namespace SillyMorningGame.Controller
                     miniPreviousFireTimes[i] = gameTime.TotalGameTime;
 
                     // Add the projectile, but add it to the front and center of the player
-                    AddProjectile(testShips[i].Position + new Vector2(testShips[i].Width / 2, 0));
+                    AddProjectile(miniShips[i].Position + new Vector2(miniShips[i].Width / 2, 0));
 
                     // Play the laser sound
                     laserSound.Play();
 
                     // reset score if player health goes to zero
-                    if (testShips[i].Health <= 0)
+                    if (miniShips[i].Health <= 0)
                     {
-                        testShips[i].Active = false;
+                        miniShips[i].Active = false;
                     }
                 }
 
@@ -1371,6 +1563,10 @@ namespace SillyMorningGame.Controller
             for (int i = 0; i < bosses.Count; i++)
             {
                 bosses[i].Draw(spriteBatch);
+            } 
+            for (int i = 0; i < bigBosses.Count; i++)
+            {
+                bigBosses[i].Draw(spriteBatch);
             }
             // Draw the Powerups
             for (int i = 0; i < powerups.Count; i++)
@@ -1405,9 +1601,9 @@ namespace SillyMorningGame.Controller
                 explosions[i].Draw(spriteBatch);
 
             }
-            for (int i = 0; i < testShips.Count; i++)
+            for (int i = 0; i < miniShips.Count; i++)
             {
-                testShips[i].Draw(spriteBatch);
+                miniShips[i].Draw(spriteBatch);
             }
 
             // Draw the score
