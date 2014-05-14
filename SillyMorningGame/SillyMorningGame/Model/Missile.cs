@@ -49,7 +49,7 @@ namespace SillyMorningGame.Model
             screen = viewport;
 
             // Set the amount of damage the enemy can do
-            Damage = 20;
+            Damage = 50;
 
             // Set how fast the enemy moves
             projectileMoveSpeed = 15f;

@@ -41,7 +41,7 @@ namespace SillyMorningGame.Model
 
             Active = true;
 
-            powerupMoveSpeed = 10f;
+            powerupMoveSpeed = 6f;
         }
 
         public void Initialize(Animation animation, Vector2 position)
@@ -49,7 +49,7 @@ namespace SillyMorningGame.Model
             PowerupAnimation = animation;
             Position = position;
             Active = true;
-            powerupMoveSpeed = 10f;
+            powerupMoveSpeed = 6f;
         }
 
         public void Update(GameTime gameTime)

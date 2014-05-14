@@ -84,6 +84,9 @@ namespace SillyMorningGame.Controller
 
         List<ShootingEnemy> shootingEnemies;
 
+        List<TimeSpan> miniMissileFireTimes;
+        List<TimeSpan> previousMiniMissileFireTimes;
+
         List<TimeSpan> miniFireTimes;
         List<TimeSpan> miniPreviousFireTimes;
 
@@ -186,6 +189,8 @@ namespace SillyMorningGame.Controller
             previousMissileFireTime = TimeSpan.Zero;
             miniFireTimes = new List<TimeSpan>();
             miniPreviousFireTimes = new List<TimeSpan>();
+            miniMissileFireTimes = new List<TimeSpan>();
+            previousMiniMissileFireTimes = new List<TimeSpan>();
 
             enemyFireTimes = new List<TimeSpan>();
             previousEnemyFireTimes = new List<TimeSpan>();
@@ -195,31 +200,31 @@ namespace SillyMorningGame.Controller
 
 
 
-        private void AddPowerup()
+        private void AddPowerup(Vector2 position)
         {
             Animation powerAnimation = new Animation();
             powerAnimation.Initialize(powerupTexture, Vector2.Zero, 36, 36, 4, 30, Color.White, 1f, true);
-            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + enemyTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+            //Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + enemyTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
             Powerup powerup = new Powerup();
             powerup.Initialize(powerAnimation, position);
             powerups.Add(powerup);
         }
 
-        private void AddHealthPowerup()
+        private void AddHealthPowerup(Vector2 position)
         {
             Animation powerAnimation = new Animation();
             powerAnimation.Initialize(healthPowerupTexture, Vector2.Zero, 40, 40, 1, 30, Color.White, 1f, true);
-            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + healthPowerupTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+            //Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + healthPowerupTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
             HealthPowerup powerup = new HealthPowerup();
             powerup.Initialize(powerAnimation, position);
             healthPowerups.Add(powerup);
         }
 
-        private void addAllyPowerup()
+        private void addAllyPowerup(Vector2 position)
         {
             Animation allyPowerAnimation = new Animation();
             allyPowerAnimation.Initialize(allyPowerTexture, Vector2.Zero, 74, 75, 4, 20, Color.White, 1f, true);
-            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + enemyTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
+            //Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + enemyTexture.Width / 2, random.Next(100, GraphicsDevice.Viewport.Height - 100));
             AllyPowerup powerup = new AllyPowerup();
             powerup.Initialize(allyPowerAnimation, position);
             allyPowerups.Add(powerup);
@@ -326,10 +331,14 @@ namespace SillyMorningGame.Controller
 
             TimeSpan miniPrevious = TimeSpan.Zero;
             TimeSpan miniFireTime = TimeSpan.FromSeconds(.15f);
+            TimeSpan miniMissilePrevious = TimeSpan.Zero;
+            TimeSpan miniMissileFireTime = TimeSpan.FromSeconds(3f);
 
             testShips.Add(mini);
             miniPreviousFireTimes.Add(miniPrevious);
             miniFireTimes.Add(miniFireTime);
+            miniMissileFireTimes.Add(miniMissileFireTime);
+            previousMiniMissileFireTimes.Add(miniMissilePrevious);
         }
 
         /// <summary>
@@ -651,7 +660,7 @@ namespace SillyMorningGame.Controller
                 previousPowerupSpawnTime = gameTime.TotalGameTime;
 
                 // Add a Powerup
-                AddPowerup();
+                //AddPowerup();
             }
 
             // Update the Enemies
@@ -676,7 +685,7 @@ namespace SillyMorningGame.Controller
                 previousHealthPowerupSpawnTime = gameTime.TotalGameTime;
 
                 // Add a Powerup
-                AddHealthPowerup();
+                //AddHealthPowerup();
             }
 
             // Update the powerups
@@ -701,7 +710,7 @@ namespace SillyMorningGame.Controller
                 allyPreviousPowerupSpawnTime = gameTime.TotalGameTime;
 
                 // Add a Powerup
-                addAllyPowerup();
+                //addAllyPowerup();
             }
 
             // Update the Enemies
@@ -981,7 +990,7 @@ namespace SillyMorningGame.Controller
                 }
                 for (int j = 0; j < asteroids.Count; j++)
                 {
-                    rectangle3 = new Rectangle((int)asteroids[i].Position.X, (int)asteroids[i].Position.Y - 40, asteroids[i].Width, asteroids[i].Height + 20);
+                    rectangle3 = new Rectangle((int)asteroids[j].Position.X, (int)asteroids[j].Position.Y - 40, asteroids[j].Width, asteroids[j].Height + 20);
 
                     if (rectangle1.Intersects(rectangle3))
                     {
@@ -990,7 +999,7 @@ namespace SillyMorningGame.Controller
                         explosionSound.Play();
                         missiles[i].Active = false;
 
-                        PowerupDrop();
+                        PowerupDrop(asteroids[j].Position);
                     }
                 }
 
@@ -1086,19 +1095,33 @@ namespace SillyMorningGame.Controller
             }
         }
 
-        private void PowerupDrop()
+        private void PowerupDrop(Vector2 position)
         {
             int dropped = 0;
-            int rValue = random.Next(1, 6);
+            int max = 4;
+            int rValue = random.Next(1, max);
 
-            if (rValue == 2)
+            if (rValue == 1)
             {
                 dropped = random.Next(1, 4);
+            }
+            else if (max > 2)
+            {
+                max--;
+
             }
 
             if (dropped == 1)
             {
-                AddPowerup();
+                AddPowerup(position);
+            }
+            if (dropped == 2)
+            {
+                addAllyPowerup(position);
+            }
+            if (dropped == 3)
+            {
+                AddHealthPowerup(position);
             }
         }
 
@@ -1141,7 +1164,6 @@ namespace SillyMorningGame.Controller
                 {
                     previousMissileFireTime = gameTime.TotalGameTime;
                     AddMissile(player.Position + new Vector2(player.Width / 2, 0));
-                    explosionSound.Play();
                 }
             }
 
@@ -1227,6 +1249,15 @@ namespace SillyMorningGame.Controller
                 currentGamePadState.DPad.Down == ButtonState.Pressed)
                 {
                     testShips[i].Position.Y += playerMoveSpeed;
+                }
+                if (currentKeyboardState.IsKeyDown(Keys.Space) ||
+            currentGamePadState.Buttons.X == ButtonState.Pressed)
+                {
+                    if (gameTime.TotalGameTime - previousMiniMissileFireTimes[i] > miniMissileFireTimes[i])
+                    {
+                        previousMiniMissileFireTimes[i] = gameTime.TotalGameTime;
+                        AddMissile(testShips[i].Position + new Vector2(testShips[i].Width / 2, 0));
+                    }
                 }
 
                 // Make sure that the player does not go out of bounds

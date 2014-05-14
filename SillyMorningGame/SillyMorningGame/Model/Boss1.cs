@@ -53,7 +53,7 @@ namespace SillyMorningGame.Model
 
 
             // Set the health of the enemy
-            Health = 1000;
+            Health = 700;
 
             // Set the amount of damage the enemy can do
             Damage = 100;
