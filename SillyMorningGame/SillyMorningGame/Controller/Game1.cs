@@ -561,15 +561,15 @@ namespace SillyMorningGame.Controller
 
         private void UpdateBoss(GameTime gameTime)
         {
-            if (score % 8000 == 0 && score != 0 && bosses.Count == 0 && bigBosses.Count == 0)
+            if (score % 8000 == 0 && score != 0 && bosses.Count == 0)
             {
-                AddBigBoss();
+                AddBoss();
                 enemySpawnTime = TimeSpan.FromSeconds(.5);
-                healthMultiplier += 4;
+                healthMultiplier += 3;
             }
             if (score % 16000 == 0 && score != 0)
             {
-                secondHealthMultiplier += 3;
+                secondHealthMultiplier += 2;
             }
 
 
@@ -1013,7 +1013,7 @@ namespace SillyMorningGame.Controller
 
             for (int i = 0; i < bosses.Count; i++)
             {
-                rectangle4 = new Rectangle((int)bosses[i].Position.X + 30,
+                rectangle4 = new Rectangle((int)bosses[i].Position.X +40,
                 (int)bosses[i].Position.Y,
                 bosses[i].Width,
                 bosses[i].Height);
@@ -1139,6 +1139,7 @@ namespace SillyMorningGame.Controller
                     {
                         enemies[j].Health -= missiles[i].Damage;
                         missiles[i].Active = false;
+
                     }
                 }
                 for (int j = 0; j < shootingEnemies.Count; j++)
@@ -1510,6 +1511,7 @@ namespace SillyMorningGame.Controller
                 if (missiles[i].Active == false)
                 {
                     missiles.RemoveAt(i);
+                    explosionSound.Play();
                 }
             }
 

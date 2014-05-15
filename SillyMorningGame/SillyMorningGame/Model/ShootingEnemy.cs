@@ -57,7 +57,7 @@ namespace SillyMorningGame.Model
             Health = 75 * multiplier;
 
             // Set the amount of damage the enemy can do
-            Damage = 50 * multiplier;
+            Damage = 50;
 
             // Set how fast the enemy moves
             enemyMoveSpeed = 3f;
