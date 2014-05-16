@@ -482,7 +482,7 @@ namespace SillyMorningGame.Controller
             // Update the enemies
             UpdateEnemies(gameTime);
             UpdateShootingEnemies(gameTime);
-            UpdateBigBoss(gameTime);
+            //UpdateBigBoss(gameTime);
             // Update the collision
             UpdateCollision();
             UpdateBossCollision();
